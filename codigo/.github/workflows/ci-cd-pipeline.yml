@@ -186,7 +186,7 @@ jobs:
 
       - name: Iniciar notificacion-service (background)
         run: |
-          java -jar jars/notificacion-service/target/notificacion-service-1.0.0.jar \
+          java -jar jars/notificacion-service-1.0.0.jar \
             --server.port=8081 &
           echo "NOTIF_PID=$!" >> $GITHUB_ENV
 
@@ -194,7 +194,7 @@ jobs:
         env:
           JWT_SECRET: "clave-super-secreta-sabana-2024-debe-ser-larga-minimo-32-chars"
         run: |
-          java -jar jars/riesgo-service/target/riesgo-service-1.0.0.jar \
+          java -jar jars/riesgo-service-1.0.0.jar \
             --server.port=8080 \
             --notificacion.service.url=http://localhost:8081 &
           echo "RIESGO_PID=$!" >> $GITHUB_ENV

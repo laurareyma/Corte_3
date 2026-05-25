@@ -20,9 +20,7 @@ spec:
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
-        env:
-        - name: NOTIFICACION_SERVICE_URL
-          value: "http://notificacion-service:8081"
+        args: ["--notificacion.service.url=http://notificacion-service:8081"]
         livenessProbe:
           httpGet:
             path: /api/estudiantes/health

@@ -2,7 +2,7 @@
 
 **Diseño y Arquitectura de Software**  
 **Profesor:** César Augusto Vega Fernández  
-**Autores:** Maria Alejandra Cabrera Arauz · Laura Vanessa Reyes Martinez · Juan Esteban Ramirez Hermosa
+**Autores:** Maria Alejandra Cabrera Arauz · Laura Vanesa Reyes Martinez · Juan Esteban Ramirez Hermosa
 
 ---
 
