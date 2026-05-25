@@ -135,6 +135,7 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_CONFIG: .gitleaks.toml
 
       - name: OWASP Dependency Check — notificacion-service
         uses: dependency-check/Dependency-Check_Action@main
@@ -192,7 +193,7 @@ jobs:
 
       - name: Iniciar riesgo-service (background)
         env:
-          JWT_SECRET: "clave-super-secreta-sabana-2024-debe-ser-larga-minimo-32-chars"
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
         run: |
           java -jar jars/riesgo-service-1.0.0.jar \
             --server.port=8080 \

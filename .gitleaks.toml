@@ -1,0 +1,9 @@
+[allowlist]
+description = "Ignorar secretos de ejemplo en archivos de configuración de pruebas"
+paths = [
+    "codigo/riesgo-service/src/test/resources/application.properties",
+    "codigo/riesgo-service/src/main/resources/application.properties",
+]
+regexes = [
+    "clave-super-secreta-sabana-2024-debe-ser-larga-minimo-32-chars",
+]
