@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Estudiante.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">riesgo-service</a> &gt; <a href="index.source.html" class="el_package">com.sabana.riesgo.model</a> &gt; <span class="el_source">Estudiante.java</span></div><h1>Estudiante.java</h1><pre class="source lang-java linenums">package com.sabana.riesgo.model;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
+public class Estudiante {
+
+    @NotBlank(message = &quot;El nombre del estudiante es obligatorio&quot;)
+    @Size(max = 200, message = &quot;El nombre no puede superar 200 caracteres&quot;)
+    private String nombre;
+
+    @NotNull(message = &quot;El nivel de riesgo es obligatorio&quot;)
+    private NivelRiesgo nivel;
+
+<span class="nc" id="L16">    public Estudiante() {}</span>
+
+<span class="fc" id="L18">    public Estudiante(String nombre, NivelRiesgo nivel) {</span>
+<span class="fc" id="L19">        this.nombre = nombre;</span>
+<span class="fc" id="L20">        this.nivel = nivel;</span>
+<span class="fc" id="L21">    }</span>
+
+<span class="fc" id="L23">    public String getNombre() { return nombre; }</span>
+<span class="nc" id="L24">    public void setNombre(String nombre) { this.nombre = nombre; }</span>
+
+<span class="fc" id="L26">    public NivelRiesgo getNivel() { return nivel; }</span>
+<span class="nc" id="L27">    public void setNivel(NivelRiesgo nivel) { this.nivel = nivel; }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NotificacionController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">notificacion-service</a> &gt; <a href="index.source.html" class="el_package">com.sabana.notificacion.controller</a> &gt; <span class="el_source">NotificacionController.java</span></div><h1>NotificacionController.java</h1><pre class="source lang-java linenums">package com.sabana.notificacion.controller;
+
+import com.sabana.notificacion.model.NotificacionRequest;
+import com.sabana.notificacion.service.NotificacionService;
+import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping(&quot;/api/notificaciones&quot;)
+public class NotificacionController {
+
+<span class="fc" id="L18">    private static final Logger log = LoggerFactory.getLogger(NotificacionController.class);</span>
+    private final NotificacionService notificacionService;
+
+<span class="fc" id="L21">    public NotificacionController(NotificacionService notificacionService) {</span>
+<span class="fc" id="L22">        this.notificacionService = notificacionService;</span>
+<span class="fc" id="L23">    }</span>
+
+    // ✅ Endpoint 1: Recibir notificación desde riesgo-service (comunicación REST)
+    @PostMapping(&quot;/enviar&quot;)
+    public ResponseEntity&lt;String&gt; recibirNotificacion(@Valid @RequestBody NotificacionRequest request) {
+<span class="fc" id="L28">        log.info(&quot;📥 POST /api/notificaciones/enviar — Estudiante: {}&quot;, request.getNombre());</span>
+<span class="fc" id="L29">        String resultado = notificacionService.procesarNotificacion(request);</span>
+<span class="fc" id="L30">        return ResponseEntity.ok(resultado);</span>
+    }
+
+    // ✅ Endpoint 2: Consultar historial de un estudiante
+    @GetMapping(&quot;/historial/{nombre}&quot;)
+    public ResponseEntity&lt;List&lt;Map&lt;String, String&gt;&gt;&gt; consultarHistorial(@PathVariable String nombre) {
+<span class="fc" id="L36">        log.info(&quot;📥 GET /api/notificaciones/historial/{}&quot;, nombre);</span>
+<span class="fc" id="L37">        return ResponseEntity.ok(notificacionService.consultarHistorial(nombre));</span>
+    }
+
+    // Health check público
+    @GetMapping(&quot;/health&quot;)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; health() {
+<span class="nc" id="L43">        return ResponseEntity.ok(Map.of(&quot;status&quot;, &quot;UP&quot;, &quot;service&quot;, &quot;notificacion-service&quot;));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

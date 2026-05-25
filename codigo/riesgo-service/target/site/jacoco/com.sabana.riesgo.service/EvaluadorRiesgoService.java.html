@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EvaluadorRiesgoService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">riesgo-service</a> &gt; <a href="index.source.html" class="el_package">com.sabana.riesgo.service</a> &gt; <span class="el_source">EvaluadorRiesgoService.java</span></div><h1>EvaluadorRiesgoService.java</h1><pre class="source lang-java linenums">package com.sabana.riesgo.service;
+
+import com.sabana.riesgo.client.NotificacionClient;
+import com.sabana.riesgo.factory.Apoyo;
+import com.sabana.riesgo.factory.ApoyoFactory;
+import com.sabana.riesgo.model.Estudiante;
+import com.sabana.riesgo.model.NivelRiesgo;
+import com.sabana.riesgo.observer.RiesgoObserver;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Map;
+
+@Service
+public class EvaluadorRiesgoService {
+
+<span class="fc" id="L21">    private static final Logger log = LoggerFactory.getLogger(EvaluadorRiesgoService.class);</span>
+
+    private final List&lt;RiesgoObserver&gt; observadores;
+    private final NotificacionClient notificacionClient;
+
+    // ✅ Métricas personalizadas para Prometheus
+    private final Counter estudiantesEvaluadosCounter;
+    private final Counter alertasCriticasCounter;
+
+<span class="fc" id="L30">    public EvaluadorRiesgoService(NotificacionClient notificacionClient,</span>
+                                   MeterRegistry meterRegistry,
+                                   List&lt;RiesgoObserver&gt; observadores) {
+<span class="fc" id="L33">        this.notificacionClient = notificacionClient;</span>
+<span class="fc" id="L34">        this.observadores = observadores;</span>
+
+<span class="fc" id="L36">        this.estudiantesEvaluadosCounter = Counter.builder(&quot;estudiantes.evaluados.total&quot;)</span>
+<span class="fc" id="L37">                .description(&quot;Total de estudiantes evaluados&quot;)</span>
+<span class="fc" id="L38">                .register(meterRegistry);</span>
+
+<span class="fc" id="L40">        this.alertasCriticasCounter = Counter.builder(&quot;alertas.criticas.total&quot;)</span>
+<span class="fc" id="L41">                .description(&quot;Total de alertas de riesgo crítico (ROJO)&quot;)</span>
+<span class="fc" id="L42">                .register(meterRegistry);</span>
+<span class="fc" id="L43">    }</span>
+
+    // ✅ Funcionalidad 1: evaluar riesgo de un estudiante
+    public Map&lt;String, String&gt; evaluar(Estudiante estudiante) {
+<span class="fc" id="L47">        log.info(&quot;🔍 Evaluando riesgo de: {}&quot;, estudiante.getNombre());</span>
+<span class="fc" id="L48">        estudiantesEvaluadosCounter.increment();</span>
+
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        if (estudiante.getNivel() == NivelRiesgo.ROJO ||</span>
+<span class="pc bpc" id="L51" title="1 of 2 branches missed.">            estudiante.getNivel() == NivelRiesgo.AMARILLO) {</span>
+
+            // Patrón Observer: notificar localmente
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">            for (RiesgoObserver obs : observadores) {</span>
+<span class="nc" id="L55">                obs.actualizar(estudiante);</span>
+            }
+
+            // Patrón Factory: asignar apoyo según nivel
+<span class="fc" id="L59">            Apoyo apoyo = ApoyoFactory.crearApoyo(estudiante.getNivel());</span>
+<span class="fc" id="L60">            String apoyoMsg = apoyo.ofrecer();</span>
+
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">            if (estudiante.getNivel() == NivelRiesgo.ROJO) {</span>
+<span class="fc" id="L63">                alertasCriticasCounter.increment();</span>
+            }
+
+            // Comunicación REST al notificacion-service (Circuit Breaker + Retry + TimeLimiter + timeouts HTTP)
+<span class="fc" id="L67">            String respuestaNotificacion = notificacionClient.enviarNotificacion(estudiante).join();</span>
+
+<span class="fc" id="L69">            log.info(&quot;📋 Evaluación completada para: {}&quot;, estudiante.getNombre());</span>
+
+<span class="fc" id="L71">            return Map.of(</span>
+<span class="fc" id="L72">                &quot;estudiante&quot;,    estudiante.getNombre(),</span>
+<span class="fc" id="L73">                &quot;nivelRiesgo&quot;,   estudiante.getNivel().name(),</span>
+<span class="fc" id="L74">                &quot;apoyo&quot;,         apoyoMsg,</span>
+<span class="fc" id="L75">                &quot;notificacion&quot;,  respuestaNotificacion</span>
+            );
+        } else {
+<span class="fc" id="L78">            log.info(&quot;✅ Estudiante {} sin riesgo crítico.&quot;, estudiante.getNombre());</span>
+<span class="fc" id="L79">            return Map.of(</span>
+<span class="fc" id="L80">                &quot;estudiante&quot;,  estudiante.getNombre(),</span>
+<span class="fc" id="L81">                &quot;nivelRiesgo&quot;, &quot;VERDE&quot;,</span>
+<span class="fc" id="L82">                &quot;mensaje&quot;,     &quot;✅ Sin riesgo crítico. ¡Continúa así!&quot;</span>
+            );
+        }
+    }
+
+    // ✅ Funcionalidad 2: consultar historial de notificaciones
+    public Map&lt;String, String&gt; consultarHistorial(String nombreEstudiante) {
+<span class="fc" id="L89">        log.info(&quot;📂 Consultando historial de: {}&quot;, nombreEstudiante);</span>
+<span class="fc" id="L90">        String historial = notificacionClient.consultarHistorial(nombreEstudiante).join();</span>
+<span class="fc" id="L91">        return Map.of(&quot;estudiante&quot;, nombreEstudiante, &quot;historial&quot;, historial);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.sabana.riesgo.client.NotificacionClientWireMockTest
+-------------------------------------------------------------------------------
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 17.53 s -- in com.sabana.riesgo.client.NotificacionClientWireMockTest

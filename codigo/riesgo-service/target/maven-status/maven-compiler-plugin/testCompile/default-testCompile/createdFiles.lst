@@ -1,0 +1,5 @@
+com\sabana\riesgo\service\EvaluadorRiesgoServiceTest.class
+com\sabana\riesgo\security\JwtUtilTest.class
+com\sabana\riesgo\RiesgoApplicationTest.class
+com\sabana\riesgo\client\NotificacionClientWireMockTest.class
+com\sabana\riesgo\factory\ApoyoFactoryTest.class

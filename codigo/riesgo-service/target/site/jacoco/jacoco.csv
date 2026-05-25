@@ -1,0 +1,16 @@
+GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
+riesgo-service,com.sabana.riesgo,RiesgoApplication,5,3,0,0,2,1,1,1,1,1
+riesgo-service,com.sabana.riesgo.controller,AuthController,30,6,4,0,8,3,3,1,1,1
+riesgo-service,com.sabana.riesgo.controller,EstudianteController,32,10,0,0,7,4,3,2,3,2
+riesgo-service,com.sabana.riesgo.factory,ApoyoPsicologico,0,5,0,0,0,2,0,2,0,2
+riesgo-service,com.sabana.riesgo.factory,ApoyoFactory,3,19,0,3,1,5,1,3,1,1
+riesgo-service,com.sabana.riesgo.factory,ApoyoAcademico,0,5,0,0,0,2,0,2,0,2
+riesgo-service,com.sabana.riesgo.service,EvaluadorRiesgoService,7,123,3,5,1,35,3,5,0,4
+riesgo-service,com.sabana.riesgo.observer,NotificadorRiesgo,8,7,0,0,3,2,1,2,1,2
+riesgo-service,com.sabana.riesgo.model,NivelRiesgo,0,34,0,0,0,4,0,1,0,1
+riesgo-service,com.sabana.riesgo.model,Estudiante,11,15,0,0,3,6,3,3,3,3
+riesgo-service,com.sabana.riesgo.security,JwtUtil,0,56,0,0,0,22,0,5,0,5
+riesgo-service,com.sabana.riesgo.config,SecurityConfig.new OncePerRequestFilter() {...},41,6,6,0,10,1,4,1,1,1
+riesgo-service,com.sabana.riesgo.config,SecurityConfig,0,66,0,0,0,14,0,6,0,6
+riesgo-service,com.sabana.riesgo.config,ResilienceConfig,0,14,0,0,0,5,0,2,0,2
+riesgo-service,com.sabana.riesgo.client,NotificacionClient,2,107,2,2,0,27,2,8,0,8

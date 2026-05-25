@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NotificacionEntity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">notificacion-service</a> &gt; <a href="index.source.html" class="el_package">com.sabana.notificacion.model</a> &gt; <span class="el_source">NotificacionEntity.java</span></div><h1>NotificacionEntity.java</h1><pre class="source lang-java linenums">package com.sabana.notificacion.model;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
+import java.time.Instant;
+
+@Entity
+@Table(name = &quot;notificaciones&quot;)
+public class NotificacionEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, length = 200)
+    private String nombre;
+
+    @Column(nullable = false, length = 50)
+    private String nivel;
+
+    @Column(name = &quot;creado_en&quot;, nullable = false)
+<span class="fc" id="L27">    private Instant creadoEn = Instant.now();</span>
+
+<span class="fc" id="L29">    public NotificacionEntity() {}</span>
+
+<span class="fc" id="L31">    public NotificacionEntity(String nombre, String nivel) {</span>
+<span class="fc" id="L32">        this.nombre = nombre;</span>
+<span class="fc" id="L33">        this.nivel = nivel;</span>
+<span class="fc" id="L34">        this.creadoEn = Instant.now();</span>
+<span class="fc" id="L35">    }</span>
+
+    public Long getId() {
+<span class="nc" id="L38">        return id;</span>
+    }
+
+    public String getNombre() {
+<span class="fc" id="L42">        return nombre;</span>
+    }
+
+    public void setNombre(String nombre) {
+<span class="nc" id="L46">        this.nombre = nombre;</span>
+<span class="nc" id="L47">    }</span>
+
+    public String getNivel() {
+<span class="fc" id="L50">        return nivel;</span>
+    }
+
+    public void setNivel(String nivel) {
+<span class="nc" id="L54">        this.nivel = nivel;</span>
+<span class="nc" id="L55">    }</span>
+
+    public Instant getCreadoEn() {
+<span class="fc" id="L58">        return creadoEn;</span>
+    }
+
+    public void setCreadoEn(Instant creadoEn) {
+<span class="nc" id="L62">        this.creadoEn = creadoEn;</span>
+<span class="nc" id="L63">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
