@@ -2,6 +2,7 @@ package com.sabana.riesgo.controller;
 
 import com.sabana.riesgo.model.Estudiante;
 import com.sabana.riesgo.service.EvaluadorRiesgoService;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +23,7 @@ public class EstudianteController {
 
     // ✅ Endpoint 1: Evaluar riesgo (protegido con JWT)
     @PostMapping("/evaluar")
-    public ResponseEntity<Map<String, String>> evaluarRiesgo(@RequestBody Estudiante estudiante) {
+    public ResponseEntity<Map<String, String>> evaluarRiesgo(@Valid @RequestBody Estudiante estudiante) {
         log.info("📥 POST /api/estudiantes/evaluar - Estudiante: {}", estudiante.getNombre());
         Map<String, String> resultado = evaluadorService.evaluar(estudiante);
         return ResponseEntity.ok(resultado);

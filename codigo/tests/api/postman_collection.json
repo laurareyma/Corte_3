@@ -1,39 +1,368 @@
 {
 	"info": {
-		"name": "DAO-Corte2 API Tests",
+		"name": "Botón de Pánico Académico — API Tests",
+		"description": "Pruebas de API para riesgo-service y notificacion-service (Corte 3)",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
+	"variable": [
+		{ "key": "BASE_URL", "value": "http://localhost:8080" },
+		{ "key": "NOTIF_URL", "value": "http://localhost:8081" },
+		{ "key": "TOKEN", "value": "" }
+	],
 	"item": [
 		{
-			"name": "Health Check",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "http://localhost:8080/api/estudiantes/health",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"api",
-						"estudiantes",
-						"health"
+			"name": "Health Checks",
+			"item": [
+				{
+					"name": "Health — riesgo-service",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/api/estudiantes/health",
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "estudiantes", "health"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('service es riesgo-service', () => {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.service).to.eql('riesgo-service');",
+									"    pm.expect(body.status).to.eql('UP');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Health — notificacion-service",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{NOTIF_URL}}/api/notificaciones/health",
+							"host": ["{{NOTIF_URL}}"],
+							"path": ["api", "notificaciones", "health"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('service es notificacion-service', () => {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.service).to.eql('notificacion-service');",
+									"    pm.expect(body.status).to.eql('UP');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
 					]
 				}
-			},
-			"event": [
+			]
+		},
+		{
+			"name": "Autenticación",
+			"item": [
 				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});"
+					"name": "Login — obtener token JWT",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"usuario\": \"admin\"}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/api/auth/login",
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "auth", "login"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Retorna token JWT', () => {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.token).to.be.a('string').and.not.empty;",
+									"    pm.expect(body.tipo).to.eql('Bearer');",
+									"    pm.collectionVariables.set('TOKEN', body.token);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Login — usuario vacío retorna 400",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"usuario\": \"\"}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/api/auth/login",
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "auth", "login"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 400 para usuario vacío', () => pm.response.to.have.status(400));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Evaluación de Riesgo",
+			"item": [
+				{
+					"name": "Evaluar — nivel ROJO",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }
 						],
-						"type": "text/javascript"
-					}
+						"body": {
+							"mode": "raw",
+							"raw": "{\"nombre\": \"Luis García\", \"nivel\": \"ROJO\"}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/api/estudiantes/evaluar",
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "estudiantes", "evaluar"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Respuesta contiene nivel ROJO y apoyo', () => {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.nivelRiesgo).to.eql('ROJO');",
+									"    pm.expect(body.apoyo).to.be.a('string').and.not.empty;",
+									"    pm.expect(body.estudiante).to.eql('Luis García');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Evaluar — nivel AMARILLO",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"nombre\": \"Ana López\", \"nivel\": \"AMARILLO\"}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/api/estudiantes/evaluar",
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "estudiantes", "evaluar"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Nivel AMARILLO con apoyo académico', () => {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.nivelRiesgo).to.eql('AMARILLO');",
+									"    pm.expect(body.apoyo).to.be.a('string').and.not.empty;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Evaluar — nivel VERDE (sin alerta)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"nombre\": \"María Martínez\", \"nivel\": \"VERDE\"}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/api/estudiantes/evaluar",
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "estudiantes", "evaluar"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('VERDE sin alerta crítica', () => {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.nivelRiesgo).to.eql('VERDE');",
+									"    pm.expect(body.mensaje).to.include('Sin riesgo crítico');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Evaluar — sin token retorna 403",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"nombre\": \"Test\", \"nivel\": \"ROJO\"}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/api/estudiantes/evaluar",
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "estudiantes", "evaluar"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Sin JWT retorna 401 o 403', () => {",
+									"    pm.expect(pm.response.code).to.be.oneOf([401, 403]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Evaluar — nombre vacío retorna 400",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"nombre\": \"\", \"nivel\": \"ROJO\"}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/api/estudiantes/evaluar",
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "estudiantes", "evaluar"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Nombre vacío retorna 400', () => pm.response.to.have.status(400));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Historial",
+			"item": [
+				{
+					"name": "Historial — consultar estudiante con registros",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/api/estudiantes/historial/Luis García",
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "estudiantes", "historial", "Luis García"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Respuesta contiene estudiante e historial', () => {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.estudiante).to.eql('Luis García');",
+									"    pm.expect(body.historial).to.be.a('string');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Historial — sin token retorna 403",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/api/estudiantes/historial/Ana",
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "estudiantes", "historial", "Ana"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Sin JWT retorna 401 o 403', () => {",
+									"    pm.expect(pm.response.code).to.be.oneOf([401, 403]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
 				}
 			]
 		}

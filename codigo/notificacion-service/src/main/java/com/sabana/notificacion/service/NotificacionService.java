@@ -38,8 +38,9 @@ public class NotificacionService {
         log.info("Consultando historial persistido para: {}", nombre);
         return repository.findByNombreIgnoreCaseOrderByCreadoEnDesc(nombre).stream()
                 .map(n -> Map.of(
-                        "nombre", n.getNombre(),
-                        "nivel", n.getNivel()
+                        "nombre",   n.getNombre(),
+                        "nivel",    n.getNivel(),
+                        "creadoEn", n.getCreadoEn().toString()
                 ))
                 .collect(Collectors.toList());
     }

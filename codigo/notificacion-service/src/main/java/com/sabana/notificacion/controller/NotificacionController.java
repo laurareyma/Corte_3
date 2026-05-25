@@ -2,6 +2,7 @@ package com.sabana.notificacion.controller;
 
 import com.sabana.notificacion.model.NotificacionRequest;
 import com.sabana.notificacion.service.NotificacionService;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -23,7 +24,7 @@ public class NotificacionController {
 
     // ✅ Endpoint 1: Recibir notificación desde riesgo-service (comunicación REST)
     @PostMapping("/enviar")
-    public ResponseEntity<String> recibirNotificacion(@RequestBody NotificacionRequest request) {
+    public ResponseEntity<String> recibirNotificacion(@Valid @RequestBody NotificacionRequest request) {
         log.info("📥 POST /api/notificaciones/enviar — Estudiante: {}", request.getNombre());
         String resultado = notificacionService.procesarNotificacion(request);
         return ResponseEntity.ok(resultado);

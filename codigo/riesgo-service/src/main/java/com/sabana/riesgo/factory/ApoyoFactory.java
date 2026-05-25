@@ -8,7 +8,8 @@ public class ApoyoFactory {
         return switch (nivel) {
             case ROJO     -> new ApoyoPsicologico();
             case AMARILLO -> new ApoyoAcademico();
-            default       -> new ApoyoAcademico();
+            case VERDE    -> throw new IllegalArgumentException(
+                    "No se requiere apoyo para nivel VERDE");
         };
     }
 }

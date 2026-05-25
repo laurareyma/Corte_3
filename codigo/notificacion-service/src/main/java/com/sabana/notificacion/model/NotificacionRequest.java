@@ -1,8 +1,17 @@
 package com.sabana.notificacion.model;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+
 public class NotificacionRequest {
 
+    @NotBlank(message = "El nombre es obligatorio")
+    @Size(max = 200, message = "El nombre no puede superar 200 caracteres")
     private String nombre;
+
+    @NotBlank(message = "El nivel de riesgo es obligatorio")
+    @Pattern(regexp = "VERDE|AMARILLO|ROJO", message = "El nivel debe ser VERDE, AMARILLO o ROJO")
     private String nivel;
 
     public NotificacionRequest() {}

@@ -12,6 +12,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @Component
 public class NotificacionClient {
@@ -47,7 +48,7 @@ public class NotificacionClient {
             log.info("Enviando notificación al notificacion-service para: {}", estudiante.getNombre());
             String response = restTemplate.postForObject(url, body, String.class);
             log.info("Respuesta del notificacion-service: {}", response);
-            return response;
+            return response != null ? response : "Sin respuesta del servicio de notificaciones";
         });
     }
 
@@ -63,9 +64,13 @@ public class NotificacionClient {
     @TimeLimiter(name = "notificacionService")
     public CompletableFuture<String> consultarHistorial(String nombreEstudiante) {
         return CompletableFuture.supplyAsync(() -> {
-            String url = notificacionServiceUrl + "/api/notificaciones/historial/" + nombreEstudiante;
+            String url = UriComponentsBuilder
+                    .fromHttpUrl(notificacionServiceUrl + "/api/notificaciones/historial/{nombre}")
+                    .buildAndExpand(nombreEstudiante)
+                    .toUriString();
             log.info("Consultando historial de notificaciones para: {}", nombreEstudiante);
-            return restTemplate.getForObject(url, String.class);
+            String response = restTemplate.getForObject(url, String.class);
+            return response != null ? response : "[]";
         });
     }
 
