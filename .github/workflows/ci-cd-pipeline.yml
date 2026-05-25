@@ -1,0 +1,329 @@
+name: CI/CD Pipeline DevSecOps
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+# ============================================================
+# JOB 1: BUILD, TEST Y COBERTURA
+# ============================================================
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build & Test — notificacion-service
+        working-directory: codigo/notificacion-service
+        run: mvn clean verify
+
+      - name: Build & Test — riesgo-service
+        working-directory: codigo/riesgo-service
+        run: mvn clean verify
+
+      - name: Upload surefire reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: |
+            codigo/notificacion-service/target/surefire-reports/
+            codigo/riesgo-service/target/surefire-reports/
+
+      - name: Upload JaCoCo reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-reports
+          path: |
+            codigo/notificacion-service/target/site/jacoco/
+            codigo/riesgo-service/target/site/jacoco/
+
+      - name: Upload Allure results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results
+          path: |
+            codigo/notificacion-service/target/allure-results/
+            codigo/riesgo-service/target/allure-results/
+
+      - name: Upload JARs (para DAST)
+        uses: actions/upload-artifact@v4
+        with:
+          name: service-jars
+          path: |
+            codigo/notificacion-service/target/notificacion-service-1.0.0.jar
+            codigo/riesgo-service/target/riesgo-service-1.0.0.jar
+
+  # ============================================================
+  # JOB 2: ANÁLISIS DE CALIDAD — SONARCLOUD
+  # Requisito: configurar SONAR_TOKEN en GitHub Secrets del repo
+  # ============================================================
+  sonarcloud:
+    name: SonarCloud Quality Gate
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Necesario para análisis de historial de SonarCloud
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: SonarCloud — notificacion-service
+        working-directory: codigo/notificacion-service
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          mvn verify sonar:sonar \
+            -Dsonar.projectKey=sabana_notificacion-service \
+            -Dsonar.organization=sabana \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
+            -Dsonar.qualitygate.wait=true
+
+      - name: SonarCloud — riesgo-service
+        working-directory: codigo/riesgo-service
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          mvn verify sonar:sonar \
+            -Dsonar.projectKey=sabana_riesgo-service \
+            -Dsonar.organization=sabana \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
+            -Dsonar.qualitygate.wait=true
+
+  # ============================================================
+  # JOB 3: SEGURIDAD ESTÁTICA (SAST)
+  # Semgrep + Gitleaks + OWASP Dependency Check
+  # ============================================================
+  security-sast:
+    name: SAST & Dependency Scan
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Semgrep SAST
+        run: |
+          pip install semgrep --quiet
+          semgrep scan \
+            --config auto \
+            --json \
+            --output semgrep-results.json \
+            codigo/riesgo-service/src codigo/notificacion-service/src || true
+
+      - name: Gitleaks — Secrets Scanning
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: OWASP Dependency Check — notificacion-service
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'notificacion-service'
+          path: 'codigo/notificacion-service'
+          format: 'HTML'
+          out: 'reports/dependency-check-notificacion'
+
+      - name: OWASP Dependency Check — riesgo-service
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'riesgo-service'
+          path: 'codigo/riesgo-service'
+          format: 'HTML'
+          out: 'reports/dependency-check-riesgo'
+
+      - name: Upload SAST reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sast-reports
+          path: |
+            semgrep-results.json
+            reports/
+
+  # ============================================================
+  # JOB 4: DAST (OWASP ZAP) + PRUEBAS DE API (Newman)
+  # Levanta los servicios reales y los escanea en caliente
+  # ============================================================
+  dast-api-tests:
+    name: DAST (ZAP) & API Tests (Newman)
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Download JARs
+        uses: actions/download-artifact@v4
+        with:
+          name: service-jars
+          path: jars/
+
+      - name: Iniciar notificacion-service (background)
+        run: |
+          java -jar jars/notificacion-service-1.0.0.jar \
+            --server.port=8081 &
+          echo "NOTIF_PID=$!" >> $GITHUB_ENV
+
+      - name: Iniciar riesgo-service (background)
+        env:
+          JWT_SECRET: "clave-super-secreta-sabana-2024-debe-ser-larga-minimo-32-chars"
+        run: |
+          java -jar jars/riesgo-service-1.0.0.jar \
+            --server.port=8080 \
+            --notificacion.service.url=http://localhost:8081 &
+          echo "RIESGO_PID=$!" >> $GITHUB_ENV
+
+      - name: Esperar a que los servicios estén listos
+        run: |
+          echo "Esperando notificacion-service..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8081/api/notificaciones/health; then
+              echo "notificacion-service listo"
+              break
+            fi
+            sleep 3
+          done
+          echo "Esperando riesgo-service..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8080/api/estudiantes/health; then
+              echo "riesgo-service listo"
+              break
+            fi
+            sleep 3
+          done
+
+      # --------------------------------------------------------
+      # DAST: OWASP ZAP full scan sobre ambos servicios
+      # --------------------------------------------------------
+      - name: ZAP Scan — riesgo-service
+        uses: zaproxy/action-full-scan@v0.10.0
+        with:
+          target: 'http://localhost:8080'
+          rules_file_name: 'codigo/.zap/rules.tsv'
+          cmd_options: '-a'
+          fail_action: false
+          artifact_name: zap-report-riesgo
+
+      - name: ZAP Scan — notificacion-service
+        uses: zaproxy/action-full-scan@v0.10.0
+        with:
+          target: 'http://localhost:8081'
+          cmd_options: '-a'
+          fail_action: false
+          artifact_name: zap-report-notificacion
+
+      # --------------------------------------------------------
+      # Pruebas de API: Newman (Postman Collection)
+      # --------------------------------------------------------
+      - name: Instalar Newman
+        run: npm install -g newman newman-reporter-htmlextra
+
+      - name: Ejecutar colección Postman con Newman
+        run: |
+          newman run codigo/tests/api/postman_collection.json \
+            --env-var BASE_URL=http://localhost:8080 \
+            --env-var NOTIF_URL=http://localhost:8081 \
+            --reporters cli,htmlextra \
+            --reporter-htmlextra-export reports/newman-report.html \
+            || true
+
+      - name: Upload Newman report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: newman-report
+          path: reports/newman-report.html
+
+      - name: Detener servicios
+        if: always()
+        run: |
+          kill $NOTIF_PID $RIESGO_PID 2>/dev/null || true
+
+  # ============================================================
+  # JOB 5: SEGURIDAD DE CONTENEDORES (Docker + Trivy)
+  # ============================================================
+  docker-security:
+    name: Docker Build & Trivy Scan
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Compilar JARs para Docker
+        run: |
+          cd codigo/notificacion-service && mvn package -DskipTests
+          cd ../../codigo/riesgo-service && mvn package -DskipTests
+
+      - name: Build Docker image — notificacion-service
+        run: |
+          cd codigo/notificacion-service
+          docker build -t notificacion-service:latest .
+
+      - name: Build Docker image — riesgo-service
+        run: |
+          cd codigo/riesgo-service
+          docker build -t riesgo-service:latest .
+
+      - name: Trivy scan — notificacion-service
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'notificacion-service:latest'
+          format: 'json'
+          output: 'trivy-notificacion.json'
+          exit-code: '0'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Trivy scan — riesgo-service
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'riesgo-service:latest'
+          format: 'json'
+          output: 'trivy-riesgo.json'
+          exit-code: '0'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-reports
+          path: |
+            trivy-notificacion.json
+            trivy-riesgo.json
